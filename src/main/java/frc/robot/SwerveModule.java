@@ -47,7 +47,6 @@ public class SwerveModule {
     public void setDesiredState(SwerveModuleState desiredState, boolean isOpenLoop){
         /* This is a custom optimize function, since default WPILib optimize assumes continuous controller which CTRE and Rev onboard is not */
         desiredState = CTREModuleState.optimize(desiredState, getState().angle); 
-        // desiredState = SwerveModuleState.optimize(desiredState,  Rotation2d.fromDegrees(getState().angle.getDegrees()));
         setAngle(desiredState);
         setSpeed(desiredState, isOpenLoop);
     }
@@ -100,7 +99,6 @@ public class SwerveModule {
         mAngleMotor.setInverted(Constants.Swerve.angleMotorInvert);
         mAngleMotor.setNeutralMode(Constants.Swerve.angleNeutralMode);
         resetToAbsolute();
-        // zeroModuleAngle(); // TODO: TEST ME
     }
 
     public void zeroModuleAngle(){

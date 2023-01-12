@@ -36,12 +36,11 @@ public class Swerve extends SubsystemBase {
 
         swerveOdometry = new SwerveDriveOdometry(Constants.Swerve.swerveKinematics, getYaw(), getModulePositions());
 
-        drive(
-            new Translation2d(1, 0).times(Constants.Swerve.maxSpeed), 
-            0 * Constants.Swerve.maxAngularVelocity, 
-            true, 
-            true
-        );
+        // TODO: TEST ME
+        
+        // for (SwerveModule m : mSwerveMods){
+        //     m.zeroModuleAngle();
+        // }
         
     }
 
@@ -64,7 +63,7 @@ public class Swerve extends SubsystemBase {
         for(SwerveModule mod : mSwerveMods){
             mod.setDesiredState(swerveModuleStates[mod.moduleNumber], isOpenLoop);
         }
-    }    
+    }     
 
     /* Used by SwerveControllerCommand in Auto */
     public void setModuleStates(SwerveModuleState[] desiredStates) {
@@ -121,7 +120,6 @@ public class Swerve extends SubsystemBase {
             SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Velocity", mod.getState().speedMetersPerSecond);  
             SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Sincor", mod.mAngleMotor.getSelectedSensorPosition()); 
             mod.resetToAbsolute(); //this line is fucking stupid fix find the bug and remove it 
-              
         }
     }
 }
