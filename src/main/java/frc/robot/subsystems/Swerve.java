@@ -14,13 +14,18 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Swerve extends SubsystemBase {
     public SwerveDriveOdometry swerveOdometry;
+    public SwerveDriveOdometry vissionOdometry;
     public SwerveModule[] mSwerveMods;
     public Pigeon2 gyro;
+
+    private Pose2d visionPose2d = new Pose2d();
+    private Pose2d visionLastPose2d = new Pose2d();
 
     public Swerve() {
         gyro = new Pigeon2(Constants.Swerve.pigeonID);
@@ -35,13 +40,7 @@ public class Swerve extends SubsystemBase {
         };
 
         swerveOdometry = new SwerveDriveOdometry(Constants.Swerve.swerveKinematics, getYaw(), getModulePositions());
-
-        // TODO: TEST ME
-        
-        // for (SwerveModule m : mSwerveMods){
-        //     m.zeroModuleAngle();
-        // }
-        
+        vissionOdometry = new SwerveDriveOdometry(Constants.Swerve.swerveKinematics, getYaw(), getModulePositions());
     }
 
     public void drive(Translation2d translation, double rotation, boolean fieldRelative, boolean isOpenLoop) {
@@ -63,7 +62,7 @@ public class Swerve extends SubsystemBase {
         for(SwerveModule mod : mSwerveMods){
             mod.setDesiredState(swerveModuleStates[mod.moduleNumber], isOpenLoop);
         }
-    }     
+    }    
 
     /* Used by SwerveControllerCommand in Auto */
     public void setModuleStates(SwerveModuleState[] desiredStates) {
@@ -76,6 +75,14 @@ public class Swerve extends SubsystemBase {
 
     public Pose2d getPose() {
         return swerveOdometry.getPoseMeters();
+    }
+
+    public Pose2d getVisionPose(){
+        return vissionOdometry.getPoseMeters();
+    }
+
+    public void resetVisionPose(Pose2d pose){
+        vissionOdometry.resetPosition(getYaw(), getModulePositions(), pose);
     }
 
     public void resetOdometry(Pose2d pose) {
@@ -106,20 +113,27 @@ public class Swerve extends SubsystemBase {
         return (Constants.Swerve.invertGyro) ? Rotation2d.fromDegrees(360 - gyro.getYaw()) : Rotation2d.fromDegrees(gyro.getYaw());
     }
 
+    public void resetModulesToAbsolute(){
+        for(SwerveModule mod : mSwerveMods){
+            mod.resetToAbsolute();
+        }
+    }
+
+
     @Override
     public void periodic(){
-        swerveOdometry.update(getYaw(), getModulePositions());  
-
-
-        SmartDashboard.putNumber("X", swerveOdometry.getPoseMeters().getX());
-        SmartDashboard.putNumber("Y", swerveOdometry.getPoseMeters().getY());
-        
-        for(SwerveModule mod : mSwerveMods){
-            SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Cancoder", mod.getCanCoderOffSet().getDegrees());
-            SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Integrated", mod.getPosition().angle.getDegrees());
-            SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Velocity", mod.getState().speedMetersPerSecond);  
-            SmartDashboard.putNumber("Mod " + mod.moduleNumber + " Sincor", mod.mAngleMotor.getSelectedSensorPosition()); 
-            mod.resetToAbsolute(); //this line is fucking stupid fix find the bug and remove it 
+        if (DriverStation.isDisabled()){
+            resetModulesToAbsolute();
         }
+
+        swerveOdometry.update(getYaw(), getModulePositions());  
+        vissionOdometry.update(getYaw(), getModulePositions());  
+        
+        SmartDashboard.putNumber("Robot x",getPose().getX());
+        SmartDashboard.putNumber("Robot y",getPose().getY());
+
+        SmartDashboard.putNumber("Vision X",getVisionPose().getX());
+        SmartDashboard.putNumber("Vision Y",getVisionPose().getY());
+        
     }
 }

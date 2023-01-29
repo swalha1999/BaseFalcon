@@ -4,6 +4,7 @@ import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 
@@ -25,17 +26,26 @@ public class RobotContainer {
     private final int translationAxis = XboxController.Axis.kLeftY.value;
     private final int strafeAxis = XboxController.Axis.kLeftX.value;
     private final int rotationAxis = XboxController.Axis.kRightX.value;
+    private final int up = XboxController.Axis.kRightY.value;
+
+    private final int down = XboxController.Axis.kLeftTrigger.value;
+    private final int up2 = XboxController.Axis.kRightTrigger.value;
 
     /* Driver Buttons */
     private final JoystickButton zeroGyro = new JoystickButton(driver, XboxController.Button.kY.value);
     private final JoystickButton robotCentric = new JoystickButton(driver, XboxController.Button.kLeftBumper.value);
+    private final JoystickButton xButton = new JoystickButton(driver, XboxController.Button.kX.value);
 
     /* Subsystems */
     private final Swerve s_Swerve = new Swerve();
-
-
+    private final PenomaticSubsystem  m_Penomatic = new PenomaticSubsystem(); 
+    private final VisionSubsystem m_Vision = new VisionSubsystem(s_Swerve);
+    private final Arm m_Arm = new Arm();
     /** The container for the robot. Contains subsystems, OI devices, and commands. */
     public RobotContainer() {
+        CommandScheduler.getInstance().registerSubsystem(m_Penomatic);
+        CommandScheduler.getInstance().registerSubsystem(m_Vision);
+        
         s_Swerve.setDefaultCommand(
             new TeleopSwerve(
                 s_Swerve, 
@@ -46,6 +56,15 @@ public class RobotContainer {
             )
         );
 
+        m_Arm.setDefaultCommand(
+            new armControl(
+                m_Arm,
+                () -> -driver.getRawAxis(up),
+                () -> -driver.getRawAxis(down),
+                () -> -driver.getRawAxis(up2)
+                )
+            );
+        
         // Configure the button bindings
         configureButtonBindings();
     }
@@ -59,6 +78,7 @@ public class RobotContainer {
     private void configureButtonBindings() {
         /* Driver Buttons */
         zeroGyro.onTrue(new InstantCommand(() -> s_Swerve.zeroGyro()));
+        xButton.whileTrue(new alignForPickup(s_Swerve, m_Vision));
     }
 
     /**
@@ -69,5 +89,9 @@ public class RobotContainer {
     public Command getAutonomousCommand() {
         // An ExampleCommand will run in autonomous
         return new exampleAuto(s_Swerve);
+    }
+
+    public Swerve getSwerve(){
+        return s_Swerve;
     }
 }
