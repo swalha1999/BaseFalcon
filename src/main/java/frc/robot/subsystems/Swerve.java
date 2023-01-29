@@ -24,8 +24,8 @@ public class Swerve extends SubsystemBase {
     public SwerveModule[] mSwerveMods;
     public Pigeon2 gyro;
 
-    private Pose2d visionPose2d = new Pose2d();
-    private Pose2d visionLastPose2d = new Pose2d();
+    // private Pose2d visionPose2d = new Pose2d();
+    // private Pose2d visionLastPose2d = new Pose2d();
 
     public Swerve() {
         gyro = new Pigeon2(Constants.Swerve.pigeonID);
