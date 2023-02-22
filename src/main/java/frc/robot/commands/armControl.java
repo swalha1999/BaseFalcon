@@ -8,21 +8,19 @@ import frc.robot.subsystems.Arm;
 public class armControl extends CommandBase {
 
     private Arm m_arm;
-    private DoubleSupplier translationSup;
-    private DoubleSupplier up;
-    private DoubleSupplier down;
-
-    public armControl(Arm arm, DoubleSupplier translationSup, DoubleSupplier up, DoubleSupplier down){
+    private DoubleSupplier firstStageSup;
+    private DoubleSupplier secondStageSup;
+    
+    public armControl(Arm arm, DoubleSupplier firstStageSup, DoubleSupplier secondStageSup){
         this.m_arm = arm;
-        this.translationSup = translationSup;
-        this.down = down;
-        this.up = up;
+        this.firstStageSup = firstStageSup;
+        this.secondStageSup = secondStageSup;
         addRequirements(m_arm);
     }
 
     @Override
     public void execute() {
-        m_arm.controlFirstStage(translationSup.getAsDouble(), up.getAsDouble(), down.getAsDouble());
+        m_arm.controlArm(firstStageSup.getAsDouble(), secondStageSup.getAsDouble());
         
     }
     

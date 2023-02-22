@@ -10,6 +10,7 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 
 import com.ctre.phoenix.sensors.Pigeon2;
 
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -18,33 +19,49 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
+
+
 public class Swerve extends SubsystemBase {
     public SwerveDriveOdometry swerveOdometry;
     public SwerveDriveOdometry vissionOdometry;
     public SwerveModule[] mSwerveMods;
     public Pigeon2 gyro;
+    PIDController PIDController_x;
+
 
     // private Pose2d visionPose2d = new Pose2d();
     // private Pose2d visionLastPose2d = new Pose2d();
 
     public Swerve() {
+        PIDController_x = new PIDController(0.50, 0, 0.07);
+        
         gyro = new Pigeon2(Constants.Swerve.pigeonID);
         gyro.configFactoryDefault();
         zeroGyro();
 
         mSwerveMods = new SwerveModule[] {
-            new SwerveModule(0, Constants.Swerve.Mod0.constants),
-            new SwerveModule(1, Constants.Swerve.Mod1.constants),
-            new SwerveModule(2, Constants.Swerve.Mod2.constants),
-            new SwerveModule(3, Constants.Swerve.Mod3.constants)
+            new SwerveModule(0, Constants.Swerve.Mod0.constants, ""),
+            new SwerveModule(1, Constants.Swerve.Mod1.constants, ""),
+            new SwerveModule(2, Constants.Swerve.Mod2.constants, ""),
+            new SwerveModule(3, Constants.Swerve.Mod3.constants, "")
         };
 
         swerveOdometry = new SwerveDriveOdometry(Constants.Swerve.swerveKinematics, getYaw(), getModulePositions());
         vissionOdometry = new SwerveDriveOdometry(Constants.Swerve.swerveKinematics, getYaw(), getModulePositions());
     }
 
-    public void drive(Translation2d translation, double rotation, boolean fieldRelative, boolean isOpenLoop) {
-        SwerveModuleState[] swerveModuleStates =
+    public void drive(Translation2d translation, double rotation, boolean fieldRelative, boolean isOpenLoop, boolean align, double tx) {
+        SwerveModuleState[] swerveModuleStates;
+        if( align ){
+            double pidOutput = PIDController_x.calculate(tx,9) > 0.85  ? 0.85 : PIDController_x.calculate(tx,9);
+            pidOutput = pidOutput < -0.85 ? -0.85 : pidOutput;
+            swerveModuleStates =
+            Constants.Swerve.swerveKinematics.toSwerveModuleStates(new ChassisSpeeds(
+                0,pidOutput,0));
+
+        }
+        else{
+            swerveModuleStates =
             Constants.Swerve.swerveKinematics.toSwerveModuleStates(
                 fieldRelative ? ChassisSpeeds.fromFieldRelativeSpeeds(
                                     translation.getX(), 
@@ -57,7 +74,7 @@ public class Swerve extends SubsystemBase {
                                     translation.getY(), 
                                     rotation)
                                 );
-                                
+        }                   
         SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, Constants.Swerve.maxSpeed);
 
         for(SwerveModule mod : mSwerveMods){
@@ -121,6 +138,7 @@ public class Swerve extends SubsystemBase {
     }
 
 
+
     @Override
     public void periodic(){
         if (DriverStation.isDisabled()){
@@ -138,3 +156,5 @@ public class Swerve extends SubsystemBase {
         
     }
 }
+
+

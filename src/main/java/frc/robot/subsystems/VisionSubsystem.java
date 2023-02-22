@@ -46,7 +46,7 @@ public class VisionSubsystem extends SubsystemBase {
 
         public VisionSubsystem(Swerve drivetrain) {
             this.drivetrain = drivetrain;
-            table = NetworkTableInstance.getDefault().getTable("limelight");
+            table = NetworkTableInstance.getDefault().getTable("limelight-fast");
             botpose = table.getDoubleArrayTopic("botpose").subscribe(new double[] {});
             ShuffleboardTab tab = Shuffleboard.getTab("Vision");
             
@@ -57,6 +57,7 @@ public class VisionSubsystem extends SubsystemBase {
             
             tab.addNumber("robot x", () -> getRobotPosition().getX());
             tab.addNumber("robot y", () -> getRobotPosition().getY());
+            
             
 
         }
@@ -70,17 +71,25 @@ public class VisionSubsystem extends SubsystemBase {
         }
     
         public boolean shooterHasTargets() {
-            return NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getBoolean(false);
+            return NetworkTableInstance.getDefault().getTable("limelight-fast").getEntry("tv").getBoolean(false);
+        }
+
+        public double getYaw(){
+            return NetworkTableInstance.getDefault().getTable("limelight-fast").getEntry("tx").getDouble(0);
+    
         }
 
         public void TurnOffVisionProcessor(){
             table.getEntry("camMode").setNumber(1);
+            // table.getEntry("ledMode").setNumber(1);
         }
 
         public void TurnOnVisionProcessor(){
             table.getEntry("camMode").setNumber(0);
+            // table.getEntry("ledMode").setNumber(3);
         }
         
+
         public void changePipeLine(int x){
             table.getEntry("pipeline").setNumber(x);
         }
@@ -99,6 +108,7 @@ public class VisionSubsystem extends SubsystemBase {
             
         }
 
+        
         
         @Override
         public void periodic() {

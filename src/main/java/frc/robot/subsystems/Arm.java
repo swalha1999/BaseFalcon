@@ -4,16 +4,18 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
+import java.util.function.BooleanSupplier;
+
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.motorcontrol.can.TalonFXConfiguration;
 
-import com.revrobotics.REVLibError;
+// import com.revrobotics.REVLibError;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkMaxPIDController;
 import com.revrobotics.CANSparkMax;
-import com.revrobotics.CANSparkMax.IdleMode;
+// import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
 
@@ -39,8 +41,8 @@ public class Arm extends SubsystemBase {
         ArmFirstStageFXConfig.slot0.kD = 0.05;
         ArmFirstStageFXConfig.slot0.kF = 0.0;
         ArmFirstStageFXConfig.slot0.integralZone = 2000;
-        ArmFirstStageFXConfig.peakOutputForward = 0.4;
-        ArmFirstStageFXConfig.peakOutputReverse = -0.1;
+        ArmFirstStageFXConfig.peakOutputForward = 0.35;
+        ArmFirstStageFXConfig.peakOutputReverse = -0.3;
         
         // for the second stage
         kP = 0.01; 
@@ -48,10 +50,10 @@ public class Arm extends SubsystemBase {
         kD = 0; 
         kIz = 0; 
         kFF = 0; 
-        kMaxOutput = 0.7; 
-        kMinOutput = -0.5;
+        kMaxOutput = 0.6; 
+        kMinOutput = -0.4;
 
-        firstStage = new TalonFX(20);
+        firstStage = new TalonFX(20, "canivore");
         firstStage.configFactoryDefault();
         firstStage.configAllSettings(ArmFirstStageFXConfig);
         
@@ -78,29 +80,70 @@ public class Arm extends SubsystemBase {
 
     }
 
-    public  void controlFirstStage(double persent, double up, double down){
-        is_postional = false;
-        firstStage.set(ControlMode.PercentOutput,persent);
-        secondStage.set(up-down);
-    }
+    public  void controlArm(double persent, double persent2){
+        
+        if( abs(persent) > 0.1 && abs(persent2) > 0.1 ){
+            firstStage.set(ControlMode.PercentOutput, persent/2);
+            
+            m_pidController.setReference(persent2, CANSparkMax.ControlType.kDutyCycle);
+            secondStage.set(persent2/2);
 
-    public void position_control(double postion1, double postion2 ){
-        is_postional = true;
-        this.postion1 = postion1;
-        this.postion2 = postion2;
-    }
-
-    public double get_position(){
-        return this.postion1;
-    }
-
-    @Override
-    public void periodic(){
-        if(is_postional){
+            postion1 = firstStage.getSelectedSensorPosition();
+            postion2 = m_encoder.getPosition();
+        
+        }else if(abs(persent2) > 0.1){
+        
+            firstStage.set(ControlMode.Position, postion1);
+            
+            secondStage.set(persent2/2);
+            postion2 = m_encoder.getPosition();
+        }else if (abs(persent) > 0.1){
+            
+            firstStage.set(ControlMode.PercentOutput, persent/2);
+            postion1 = firstStage.getSelectedSensorPosition();
+            
+            m_pidController.setReference(postion2, CANSparkMax.ControlType.kPosition);
+        }else{
+        
             firstStage.set(ControlMode.Position, postion1);
             m_pidController.setReference(postion2, CANSparkMax.ControlType.kPosition);
         }
 
+    }
+
+    public void position_control(double postion1, double postion2 ){
+        this.postion1 = postion1;
+        this.postion2 = postion2;
+    }
+
+    public void set_second_stage(double postion2){
+        this.postion2 = postion2;
+    }
+
+    public void set_first_stage(double postion1){
+        this.postion1 = postion1;
+    }
+
+    public BooleanSupplier hasReachedReference2(double reference) {
+        return () -> { return secondStage.getEncoder().getPosition() + 5 > (reference)
+          && secondStage.getEncoder().getPosition() -5 < (reference); };  
+    }
+
+    public BooleanSupplier hasReachedReference1(double reference) {
+        return () -> { return firstStage.getSelectedSensorPosition() + 1000 > (reference)
+          && firstStage.getSelectedSensorPosition() -1000 < (reference); };  
+    }
+
+    public double abs(double num){
+        if(num < 0){
+            return -num;
+        }else{
+            return num;
+        }
+    }
+
+    @Override
+    public void periodic(){
         SmartDashboard.putNumber("Arm 1 Encoder", firstStage.getSelectedSensorPosition());
         SmartDashboard.putNumber("Arm 2 Encoder", m_encoder.getPosition());
     }

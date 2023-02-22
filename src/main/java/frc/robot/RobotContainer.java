@@ -22,6 +22,7 @@ import frc.robot.subsystems.*;
 public class RobotContainer {
     /* Controllers */
     private final Joystick driver = new Joystick(0);
+    private final Joystick operator = new Joystick(1);
 
     /* Drive Controls */
     
@@ -29,18 +30,23 @@ public class RobotContainer {
     private final int strafeAxis        = XboxController.Axis.kLeftX.value;
     private final int rotationAxis      = XboxController.Axis.kRightX.value;
     
-    private final int up = XboxController.Axis.kRightY.value;
-
-    private final int down = XboxController.Axis.kLeftTrigger.value;
-    private final int up2 = XboxController.Axis.kRightTrigger.value;
+    private final int firstStageAxis   = XboxController.Axis.kLeftY.value;
+    private final int secondStageAxis  = XboxController.Axis.kRightY.value;
+    
 
     /* Driver Buttons */
     private final JoystickButton zeroGyro = new JoystickButton(driver, XboxController.Button.kY.value); //
     private final JoystickButton robotCentric = new JoystickButton(driver, XboxController.Button.kLeftBumper.value); //XboxController.Button.kLeftBumper.value
-    private final JoystickButton xButton = new JoystickButton(driver, XboxController.Button.kX.value);
-    private final JoystickButton aButton = new JoystickButton(driver, XboxController.Button.kA.value);
-    private final JoystickButton bButton = new JoystickButton(driver, XboxController.Button.kB.value);
-
+    private final JoystickButton bDriveButton = new JoystickButton(driver, XboxController.Button.kB.value);
+    
+    private final JoystickButton xButton = new JoystickButton(operator, XboxController.Button.kX.value);
+    private final JoystickButton aButton = new JoystickButton(operator, XboxController.Button.kA.value);
+    private final JoystickButton bButton = new JoystickButton(operator, XboxController.Button.kB.value);
+    private final JoystickButton yButton = new JoystickButton(operator, XboxController.Button.kY.value);
+    
+    private final JoystickButton open = new JoystickButton(operator, XboxController.Button.kLeftBumper.value); //XboxController.Button.kLeftBumper.value
+    private final JoystickButton close = new JoystickButton(operator, XboxController.Button.kRightBumper.value); //XboxController.Button.kLeftBumper.value
+    
 
 
     /* Subsystems */
@@ -55,11 +61,14 @@ public class RobotContainer {
         
         s_Swerve.setDefaultCommand(
             new TeleopSwerve(
-                s_Swerve, 
+                s_Swerve,
+                m_Vision,
                 () -> -driver.getRawAxis(translationAxis), 
                 () -> -driver.getRawAxis(strafeAxis), 
                 () -> -driver.getRawAxis(rotationAxis), 
-                () -> robotCentric.getAsBoolean()
+                () -> robotCentric.getAsBoolean(),
+                () -> bDriveButton.getAsBoolean()
+
             )
         );
 
@@ -67,9 +76,8 @@ public class RobotContainer {
         m_Arm.setDefaultCommand(
             new armControl(
                 m_Arm, 
-                () -> -driver.getRawAxis(up), 
-                () -> -driver.getRawAxis(up2), 
-                () -> -driver.getRawAxis(down)
+                () -> -operator.getRawAxis(firstStageAxis), 
+                () -> -operator.getRawAxis(secondStageAxis)
             )
         );
         
@@ -86,10 +94,20 @@ public class RobotContainer {
      */
     private void configureButtonBindings() {
         /* Driver Buttons */
+        
         zeroGyro.onTrue(new InstantCommand(() -> s_Swerve.zeroGyro()));
-        bButton.onTrue(new InstantCommand(() -> m_Penomatic.open_close()));
-        // xButton.onTrue(new InstantCommand(() -> m_Arm.position_control(60000, -230)));
-        // aButton.onTrue(new InstantCommand(() -> m_Arm.position_control(0,-50)));
+        
+        bButton.whileTrue(new Lowput(m_Arm, m_Penomatic));
+        xButton.whileTrue(new closeArm(m_Arm, m_Penomatic));
+        aButton.whileTrue(new takeFormGround(m_Arm, m_Penomatic));
+        yButton.whileTrue(new holdStright(m_Arm, m_Penomatic));
+
+        bDriveButton.onTrue(new InstantCommand( ()->m_Vision.TurnOnVisionProcessor()));
+        bDriveButton.onFalse(new InstantCommand( ()->m_Vision.TurnOffVisionProcessor()));
+        
+
+        open.onTrue(new InstantCommand(()-> m_Penomatic.open()));
+        close.onTrue(new InstantCommand(()-> m_Penomatic.close()));
         
         
     }
