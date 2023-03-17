@@ -3,9 +3,10 @@ package frc.robot;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
-
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
+
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 
@@ -38,6 +39,8 @@ public class RobotContainer {
     private final JoystickButton zeroGyro = new JoystickButton(driver, XboxController.Button.kY.value); //
     private final JoystickButton robotCentric = new JoystickButton(driver, XboxController.Button.kLeftBumper.value); //XboxController.Button.kLeftBumper.value
     private final JoystickButton bDriveButton = new JoystickButton(driver, XboxController.Button.kB.value);
+    private final JoystickButton slowDrive = new JoystickButton(driver, XboxController.Button.kRightBumper.value);
+    private final JoystickButton lift = new JoystickButton(driver, XboxController.Button.kA.value);
     
     private final JoystickButton xButton = new JoystickButton(operator, XboxController.Button.kX.value);
     private final JoystickButton aButton = new JoystickButton(operator, XboxController.Button.kA.value);
@@ -47,6 +50,7 @@ public class RobotContainer {
     private final JoystickButton open = new JoystickButton(operator, XboxController.Button.kLeftBumper.value); //XboxController.Button.kLeftBumper.value
     private final JoystickButton close = new JoystickButton(operator, XboxController.Button.kRightBumper.value); //XboxController.Button.kLeftBumper.value
     
+    SendableChooser<Command> m_chooser = new SendableChooser<>();
 
 
     /* Subsystems */
@@ -56,8 +60,13 @@ public class RobotContainer {
     private final Arm m_Arm = new Arm();
     /** The container for the robot. Contains subsystems, OI devices, and commands. */
     public RobotContainer() {
-        CommandScheduler.getInstance().registerSubsystem(m_Penomatic);
-        CommandScheduler.getInstance().registerSubsystem(m_Vision);
+
+        m_chooser.setDefaultOption("Deafult", new autoTest(s_Swerve, m_Arm, m_Penomatic));
+        m_chooser.addOption("ScoreHigh Only", new putCube(m_Arm, m_Penomatic));
+        m_chooser.addOption("HighAndLine", new highAndLine(s_Swerve, m_Arm, m_Penomatic));
+        
+        // CommandScheduler.getInstance().registerSubsystem(m_Penomatic);
+        // CommandScheduler.getInstance().registerSubsystem(m_Vision);
         
         s_Swerve.setDefaultCommand(
             new TeleopSwerve(
@@ -67,7 +76,8 @@ public class RobotContainer {
                 () -> -driver.getRawAxis(strafeAxis), 
                 () -> -driver.getRawAxis(rotationAxis), 
                 () -> robotCentric.getAsBoolean(),
-                () -> bDriveButton.getAsBoolean()
+                () -> bDriveButton.getAsBoolean(),
+                () -> slowDrive.getAsBoolean()
 
             )
         );
@@ -77,10 +87,11 @@ public class RobotContainer {
             new armControl(
                 m_Arm, 
                 () -> -operator.getRawAxis(firstStageAxis), 
-                () -> -operator.getRawAxis(secondStageAxis)
+                () -> operator.getRawAxis(secondStageAxis)
             )
         );
         
+        SmartDashboard.putData(m_chooser);
 
         // Configure the button bindings
         configureButtonBindings();
@@ -105,6 +116,7 @@ public class RobotContainer {
         bDriveButton.onTrue(new InstantCommand( ()->m_Vision.TurnOnVisionProcessor()));
         bDriveButton.onFalse(new InstantCommand( ()->m_Vision.TurnOffVisionProcessor()));
         
+        lift.onTrue(new InstantCommand(() -> m_Penomatic.up()));
 
         open.onTrue(new InstantCommand(()-> m_Penomatic.open()));
         close.onTrue(new InstantCommand(()-> m_Penomatic.close()));
@@ -119,7 +131,7 @@ public class RobotContainer {
      */
     public Command getAutonomousCommand() {
         // An ExampleCommand will run in autonomous
-        return new exampleAuto(s_Swerve);
+        return m_chooser.getSelected();
     }
 
     public Swerve getSwerve(){

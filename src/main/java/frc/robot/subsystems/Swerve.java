@@ -16,7 +16,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+// import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 
@@ -33,12 +33,13 @@ public class Swerve extends SubsystemBase {
     // private Pose2d visionLastPose2d = new Pose2d();
 
     public Swerve() {
-        PIDController_x = new PIDController(0.50, 0, 0.07);
+        PIDController_x = new PIDController(0.25, 0, 0.07);
         
         gyro = new Pigeon2(Constants.Swerve.pigeonID);
         gyro.configFactoryDefault();
         zeroGyro();
 
+        // indentify all the swerve modules and add them to the array
         mSwerveMods = new SwerveModule[] {
             new SwerveModule(0, Constants.Swerve.Mod0.constants, ""),
             new SwerveModule(1, Constants.Swerve.Mod1.constants, ""),
@@ -53,8 +54,8 @@ public class Swerve extends SubsystemBase {
     public void drive(Translation2d translation, double rotation, boolean fieldRelative, boolean isOpenLoop, boolean align, double tx) {
         SwerveModuleState[] swerveModuleStates;
         if( align ){
-            double pidOutput = PIDController_x.calculate(tx,9) > 0.85  ? 0.85 : PIDController_x.calculate(tx,9);
-            pidOutput = pidOutput < -0.85 ? -0.85 : pidOutput;
+            double pidOutput = PIDController_x.calculate(tx,11.5) > 0.7  ? 0.7 : PIDController_x.calculate(tx,11.5);
+            pidOutput = pidOutput < -0.7 ? -0.7 : pidOutput;
             swerveModuleStates =
             Constants.Swerve.swerveKinematics.toSwerveModuleStates(new ChassisSpeeds(
                 0,pidOutput,0));
@@ -145,14 +146,15 @@ public class Swerve extends SubsystemBase {
             resetModulesToAbsolute();
         }
 
-        swerveOdometry.update(getYaw(), getModulePositions());  
-        vissionOdometry.update(getYaw(), getModulePositions());  
-        
-        SmartDashboard.putNumber("Robot x",getPose().getX());
-        SmartDashboard.putNumber("Robot y",getPose().getY());
+        swerveOdometry.update(getYaw(), getModulePositions());
 
-        SmartDashboard.putNumber("Vision X",getVisionPose().getX());
-        SmartDashboard.putNumber("Vision Y",getVisionPose().getY());
+        // vissionOdometry.update(getYaw(), getModulePositions());  
+        // SmartDashboard.putNumber("Sensor 1", mSwerveMods[0].getCanCoder().getDegrees());
+        // SmartDashboard.putNumber("Sensor 2", mSwerveMods[1].getCanCoder().getDegrees());
+        // SmartDashboard.putNumber("Sensor 3", mSwerveMods[2].getCanCoder().getDegrees());
+        // SmartDashboard.putNumber("Sensor 4", mSwerveMods[3].getCanCoder().getDegrees());
+        // SmartDashboard.putNumber("Vision X",getVisionPose().getX());
+        // SmartDashboard.putNumber("Vision Y",getVisionPose().getY());
         
     }
 }

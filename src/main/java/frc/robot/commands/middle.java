@@ -10,13 +10,15 @@ import frc.robot.subsystems.PenomaticSubsystem;
 
 
 
-public class Lowput extends SequentialCommandGroup {
-    public Lowput(Arm arm, PenomaticSubsystem intake){
+public class middle extends SequentialCommandGroup {
+    public middle(Arm arm, PenomaticSubsystem intake){
         // addRequirements(arm, intake);
         // close the small arm
-       
-        // hold the postion for both arm
-        addCommands(new InstantCommand(() -> { arm.position_control(20416, 32);}));
+        addCommands(new InstantCommand(() -> { arm.set_second_stage(88); }));
+        addCommands(new WaitUntilCommand(arm.onTargetPostion()));
+
+        // set the large arm 
+        addCommands(new InstantCommand(() -> { arm.set_first_stage(56866); }));
         addCommands(new WaitUntilCommand(arm.onTargetPostion()));
 
 
